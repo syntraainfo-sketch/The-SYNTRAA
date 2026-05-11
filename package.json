@@ -1,0 +1,18 @@
+{
+  "name": "the-syntraa",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev -w web",
+    "dev:api": "npm run dev -w api",
+    "build": "npm run build -w @syntraa/types --if-present && npm run build -w web && npm run build -w api",
+    "lint": "npm run lint --workspaces --if-present",
+    "db:indexes": "npm run db:indexes -w api --if-present"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}
