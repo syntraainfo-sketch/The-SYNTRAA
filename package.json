@@ -1,17 +1,26 @@
 {
   "name": "the-syntraa",
   "private": true,
+  "description": "Mongo ping: npm run mongo-ping-cli (no colon) | npm run mongo-ping | .\\mongo-ping.cmd — bare mongo:ping in PowerShell is not a command. npm audit: prefer npm audit fix without --force; see apps/web/README.md.",
   "workspaces": [
     "apps/web",
     "packages/*"
   ],
   "scripts": {
+    "dev": "npm run dev -w web",
     "dev:web": "npm run dev -w web",
     "build": "npm run build -w @syntraa/types --if-present && npm run build -w web",
     "lint": "npm run lint --workspaces --if-present",
-    "db:indexes": "npm run db:indexes -w web --if-present"
+    "db:indexes": "npm run db:indexes -w web --if-present",
+    "mongo:ping": "npm run mongo:ping -w web",
+    "dev:smoke": "npm run dev:smoke -w web",
+    "mongo-ping": "npm run mongo:ping -w web",
+    "mongo-ping-cli": "node ./apps/web/scripts/mongo-ping-cli.mjs"
   },
   "devDependencies": {
     "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "mongodb": "^7.2.0"
   }
 }
