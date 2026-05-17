@@ -24,11 +24,23 @@ export async function apiGet<T>(
   init?: RequestInit & { next?: { revalidate?: number; tags?: string[] } }
 ): Promise<T> {
   const url = await serverSideApiUrl(path);
+  const {
+    headers: initHeaders,
+    cache: cacheOpt,
+    next: nextOpt,
+    ...restInit
+  } = init ?? {};
+  const isr = typeof nextOpt?.revalidate === "number";
+
   const res = await fetch(url, {
-    ...init,
-    headers: { ...(init?.headers ?? {}), "Content-Type": "application/json" },
-    cache: init?.cache ?? "no-store",
-    next: init?.next,
+    ...restInit,
+    headers: { ...(initHeaders ?? {}), "Content-Type": "application/json" },
+    ...(isr
+      ? { next: nextOpt }
+      : {
+          cache: cacheOpt ?? "no-store",
+          ...(nextOpt ? { next: nextOpt } : {}),
+        }),
   });
   if (!res.ok) {
     throw new Error(`GET ${path} failed: ${res.status}`);

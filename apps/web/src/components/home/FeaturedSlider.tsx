@@ -95,7 +95,7 @@ export function FeaturedSlider({ products }: { products: ProductDTO[] }) {
                   <motion.button
                     type="button"
                     className="mt-1 inline-flex h-10 w-10 items-center justify-center rounded-full border border-hairline bg-white/65 text-text transition hover:bg-white"
-                    whileTap={{ scale: 0.95 }}
+                    whileTap={{ opacity: 0.88 }}
                     aria-label="Add to cart"
                     onClick={() => {
                       // Hook into existing cart flow later (pages-premium → commerce wiring).

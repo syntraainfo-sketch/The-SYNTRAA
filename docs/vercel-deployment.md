@@ -23,8 +23,8 @@ If the **Root Directory** is the repo root, use the default install and point th
 
 Copy values from `apps/web/.env.example`. Use **Production** vs **Preview** scopes as needed.
 
-- **Public:** `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` (if used in the browser).
-- **Server:** `MONGODB_URI`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `WEB_PUBLIC_URL`, `CLIENT_ORIGIN`, Stripe secrets, Cloudinary secrets, JazzCash / Easypaisa keys, `PKR_PER_USD`, etc.
+- **Public:** `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` (or alias `NEXT_PUBLIC_CLOUDINARY_PUBLIC_ID`) for image URLs in the browser.
+- **Server:** `MONGODB_URI`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `WEB_PUBLIC_URL`, `CLIENT_ORIGIN`, Stripe secrets, Cloudinary (`CLOUDINARY_CLOUD_NAME` or `CLOUDINARY_PUBLIC_ID` / `cloudinary_public_id`; `CLOUDINARY_FOLDER` or `cloudinary_folder`), JazzCash / Easypaisa keys, `PKR_PER_USD`, etc.
 
 Do **not** set `NEXT_PUBLIC_API_URL` for the Vercel-only layout; the client calls same-origin `/api/v1`.
 

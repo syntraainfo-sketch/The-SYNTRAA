@@ -11,15 +11,17 @@ const itemSchema = new Schema(
 
 const cartSchema = new Schema(
   {
-    userId: { type: Schema.Types.ObjectId, ref: "User", sparse: true, index: true },
-    guestToken: { type: String, sparse: true, index: true },
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      unique: true,
+      sparse: true,
+    },
+    guestToken: { type: String, unique: true, sparse: true },
     items: { type: [itemSchema], default: [] },
   },
   { timestamps: true }
 );
-
-cartSchema.index({ userId: 1 }, { unique: true, sparse: true });
-cartSchema.index({ guestToken: 1 }, { unique: true, sparse: true });
 
 export type CartDoc = InferSchemaType<typeof cartSchema> & { _id: mongoose.Types.ObjectId };
 export const Cart = mongoose.models.Cart ?? mongoose.model("Cart", cartSchema);

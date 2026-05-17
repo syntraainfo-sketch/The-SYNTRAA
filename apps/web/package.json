@@ -9,7 +9,10 @@
     "start": "next start",
     "lint": "eslint",
     "db:indexes": "tsx scripts/ensureIndexes.ts",
-    "seed:admin": "tsx scripts/seedAdmin.ts"
+    "seed:admin": "node --import ./scripts/load-env.mjs --import tsx scripts/seedAdmin.ts",
+    "seed-admin": "node --import ./scripts/load-env.mjs --import tsx scripts/seedAdmin.ts",
+    "mongo:ping": "node --import ./scripts/load-env.mjs --import tsx scripts/mongoPing.ts",
+    "dev:smoke": "node --import ./scripts/load-env.mjs ./scripts/devSmoke.mjs"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.12",
@@ -22,6 +25,8 @@
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tabs": "^1.1.12",
     "@radix-ui/react-toast": "^1.2.14",
+    "@supabase/ssr": "^0.6.1",
+    "@supabase/supabase-js": "^2.52.0",
     "@syntraa/types": "*",
     "@tanstack/react-query": "^5.90.12",
     "bcryptjs": "^3.0.2",
@@ -37,10 +42,8 @@
     "next": "^15.5.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "swiper": "^11.2.10",
-    "@supabase/supabase-js": "^2.52.0",
-    "@supabase/ssr": "^0.6.1",
     "stripe": "^17.7.0",
+    "swiper": "^12.1.4",
     "tailwind-merge": "^3.3.1",
     "zod": "^3.24.4",
     "zustand": "^5.0.8"
@@ -57,5 +60,9 @@
     "tailwindcss": "^4",
     "tsx": "^4.19.4",
     "typescript": "^5"
+  },
+  "optionalDependencies": {
+    "@tailwindcss/oxide-linux-x64-gnu": "^4.3.0",
+    "lightningcss-linux-x64-gnu": "^1.32.0"
   }
 }

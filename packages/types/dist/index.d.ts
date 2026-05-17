@@ -28,6 +28,12 @@ export interface ProductDTO {
     slug: string;
     descriptionShort?: string;
     richDescription?: string;
+    ingredients?: string;
+    howToUse?: string;
+    benefits?: string;
+    sustainability?: string;
+    /** Short bullet lines for PDP (e.g. key points above the fold). */
+    highlights?: string[];
     gallery: GalleryImage[];
     variants: ProductVariant[];
     categories: string[];

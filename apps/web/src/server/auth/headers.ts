@@ -22,7 +22,17 @@ export function getOptionalUser(req: NextRequest): JwtPayload | undefined {
 export function getRequiredUser(req: NextRequest): JwtPayload {
   const t = readBearerToken(req);
   if (!t) throw new AppError(401, "Unauthorized");
-  return verifyAccess(t);
+  try {
+    return verifyAccess(t);
+  } catch (err) {
+    const name = (err as Error)?.name;
+    throw new AppError(
+      401,
+      name === "TokenExpiredError"
+        ? "Session expired. Please log in again."
+        : "Invalid session. Please log in again."
+    );
+  }
 }
 
 export function requireAdminRole(user: JwtPayload): void {

@@ -28,11 +28,26 @@ export async function PATCH(
       const cats = await Category.find({ _id: { $in: body.categories } });
       update.categories = cats.map((c) => c._id);
     }
-    const p = await Product.findByIdAndUpdate(id, update, {
-      new: true,
-    });
-    if (!p) throw new AppError(404, "Not found");
-    return NextResponse.json({ data: productJSON(p) });
+    try {
+      const p = await Product.findByIdAndUpdate(id, update, {
+        new: true,
+      });
+      if (!p) throw new AppError(404, "Not found");
+      return NextResponse.json({ data: productJSON(p) });
+    } catch (e: unknown) {
+      const code =
+        typeof e === "object" && e !== null && "code" in e
+          ? (e as { code?: number }).code
+          : undefined;
+      if (code === 11000) {
+        throw new AppError(
+          409,
+          "Is slug ka product pehle se maujood hai — naya slug use karein.",
+          "DUPLICATE_KEY"
+        );
+      }
+      throw e;
+    }
   });
 }
 

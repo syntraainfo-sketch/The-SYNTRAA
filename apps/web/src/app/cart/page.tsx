@@ -1,14 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useGuestStore } from "@/stores/guest";
 import { apiFetch, apiGetClient } from "@/lib/client-http";
+import { cld } from "@/lib/cloudinary";
 
 interface CartItem {
   productId: string;
   sku: string;
   quantity: number;
+  title?: string;
+  slug?: string;
+  imagePublicId?: string;
+  variantLabel?: string;
+  priceUSD?: number;
 }
 
 export default function CartPage() {
@@ -51,11 +58,32 @@ export default function CartPage() {
         {items.map((i) => (
           <li
             key={`${i.productId}-${i.sku}`}
-            className="flex items-center justify-between rounded-2xl border border-hairline bg-surface/40 px-5 py-4 text-sm"
+            className="flex items-center justify-between gap-4 rounded-2xl border border-hairline bg-surface/40 px-5 py-4 text-sm"
           >
-            <div>
-              <p className="font-medium text-text">{i.sku}</p>
-              <p className="text-xs text-muted">{i.productId}</p>
+            <div className="flex min-w-0 items-center gap-4">
+              <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-[#F5EFE6]">
+                <Image
+                  src={i.imagePublicId ? cld(i.imagePublicId, 180) : "/globe.svg"}
+                  alt={i.title ?? i.sku}
+                  fill
+                  className="object-contain"
+                  sizes="80px"
+                  unoptimized={i.imagePublicId ? cld(i.imagePublicId).startsWith("http") : false}
+                />
+              </div>
+              <div className="min-w-0">
+                {i.slug ? (
+                  <Link href={`/products/${i.slug}`} className="font-medium text-text hover:underline">
+                    {i.title ?? i.sku}
+                  </Link>
+                ) : (
+                  <p className="font-medium text-text">{i.title ?? i.sku}</p>
+                )}
+                <p className="mt-1 text-xs text-muted">
+                  {i.variantLabel ?? i.sku}
+                  {typeof i.priceUSD === "number" ? ` · $${i.priceUSD.toFixed(2)}` : ""}
+                </p>
+              </div>
             </div>
             <p className="text-xs uppercase tracking-[0.25em] text-muted">
               ×{i.quantity}

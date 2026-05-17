@@ -23,7 +23,7 @@ export function HomeHero() {
             transition={{ duration: 0.7, ease: [0.2, 0.8, 0.2, 1] }}
           >
             <Sparkles className="h-4 w-4 text-text" />
-            Cinematic skincare
+            Natural beauty
           </motion.p>
 
           <motion.h1
@@ -32,8 +32,7 @@ export function HomeHero() {
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             transition={{ duration: 0.9, delay: 0.05, ease: [0.2, 0.8, 0.2, 1] }}
           >
-            Where warm light
-            <span className="block text-muted">meets quiet glow.</span>
+            Where natural beauty begins
           </motion.h1>
 
           <motion.p
@@ -42,28 +41,32 @@ export function HomeHero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.16, ease: [0.2, 0.8, 0.2, 1] }}
           >
-            An editorial skincare atelier: soft nude gradients, matte black accents, and a
-            motion system tuned like film pacing — designed for ritual, not rush.
+            Clean formulas, soft light, and daily rituals designed for skin that feels as good as
+            it looks.
           </motion.p>
 
-          <div className="mt-8 flex flex-wrap gap-3">
-            <motion.div whileTap={{ scale: 0.98 }}>
+          <div className="mt-8 flex flex-wrap items-center gap-6">
+            <motion.div whileTap={{ opacity: 0.9 }}>
               <Link
                 href="/products"
                 ref={primaryRef as unknown as React.Ref<HTMLAnchorElement>}
-                className="group inline-flex items-center gap-3 rounded-full border border-hairline-2 bg-black px-6 py-3 text-[0.7rem] uppercase tracking-[0.28em] text-white shadow-[0_20px_70px_rgba(0,0,0,0.18)] transition hover:shadow-[0_24px_90px_rgba(0,0,0,0.22)]"
+                className="group inline-flex items-center gap-3 rounded-full border border-hairline-2 bg-[#2d2d2d] px-7 py-3.5 text-[0.72rem] uppercase tracking-[0.22em] text-white shadow-sm transition hover:bg-black"
               >
-                Enter the shop
+                Shop now
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Link>
             </motion.div>
-            <motion.div whileTap={{ scale: 0.98 }}>
+            <div className="font-sans text-sm text-muted">
+              <p className="text-2xl font-semibold tracking-tight text-text">100K+</p>
+              <p className="text-[0.72rem] uppercase tracking-[0.14em]">Happy customers</p>
+            </div>
+            <motion.div whileTap={{ opacity: 0.9 }}>
               <Link
                 href="/about"
                 ref={secondaryRef as unknown as React.Ref<HTMLAnchorElement>}
                 className="inline-flex items-center gap-3 rounded-full border border-hairline bg-white/60 px-6 py-3 text-[0.7rem] uppercase tracking-[0.28em] text-text transition hover:bg-white/85"
               >
-                Read the house story
+                About us
               </Link>
             </motion.div>
           </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import {
   QueryClient,
   QueryClientProvider,
@@ -7,9 +8,25 @@ import {
 } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import { LenisProvider } from "@/motion/LenisProvider";
-import { CursorGlow } from "@/components/effects/CursorGlow";
-import { ScrollProgress } from "@/components/motion/ScrollProgress";
-import { PageTransition } from "@/components/motion/PageTransition";
+import { CursorProvider } from "@/components/cursor/CursorProvider";
+import { CustomCursor } from "@/components/cursor/CustomCursor";
+
+/** Framer Motion hooks break some static prerender workers; load only on the client. */
+const ScrollProgress = dynamic(
+  () =>
+    import("@/components/motion/ScrollProgress").then((m) => ({
+      default: m.ScrollProgress,
+    })),
+  { ssr: false },
+);
+
+const PageTransition = dynamic(
+  () =>
+    import("@/components/motion/PageTransition").then((m) => ({
+      default: m.PageTransition,
+    })),
+  { ssr: false },
+);
 
 export function AppProviders({ children }: { children: ReactNode }) {
   const [client] = useState(
@@ -32,11 +49,13 @@ export function AppProviders({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={client}>
-      <LenisProvider>
-        <CursorGlow />
-        <ScrollProgress />
-        <PageTransition>{children}</PageTransition>
-      </LenisProvider>
+      <CursorProvider>
+        <CustomCursor />
+        <LenisProvider>
+          <ScrollProgress />
+          <PageTransition>{children}</PageTransition>
+        </LenisProvider>
+      </CursorProvider>
     </QueryClientProvider>
   );
 }

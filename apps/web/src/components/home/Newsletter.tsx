@@ -36,7 +36,7 @@ export function NewsletterSection() {
                 placeholder="you@domain.com"
                 type="email"
               />
-              <motion.div whileTap={{ scale: 0.99 }}>
+              <motion.div whileTap={{ opacity: 0.92 }}>
                 <Button
                   type="button"
                   className="w-full"

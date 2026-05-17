@@ -12,18 +12,25 @@ export interface UiProductCard {
   excerpt?: string;
   imagePublicId?: string;
   fromUSD?: number;
+  variantSizes?: string[];
 }
 
 export function ProductCard({ product }: { product: UiProductCard }) {
   const src = product.imagePublicId ? cld(product.imagePublicId, 900) : "/next.svg";
+  const sizes = [...new Set((product.variantSizes ?? []).filter(Boolean))];
 
   return (
     <motion.article
       whileHover={{ y: -8 }}
       transition={{ type: "spring", stiffness: 260, damping: 24 }}
+      data-cursor="card"
       className="group flex flex-col overflow-hidden rounded-[1.65rem] border border-hairline/60 bg-surface/55 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] backdrop-blur"
     >
-      <Link href={`/products/${product.slug}`} className="relative block aspect-4/5 bg-black/40">
+      <Link
+        href={`/products/${product.slug}`}
+        data-cursor="link"
+        className="relative block aspect-4/5 bg-black/40"
+      >
         <Image
           src={src}
           alt={product.title}
@@ -50,6 +57,11 @@ export function ProductCard({ product }: { product: UiProductCard }) {
             From <span className="text-text">{`$${product.fromUSD}`}</span> USD
           </p>
         )}
+        {sizes.length > 0 ? (
+          <p className="text-[0.68rem] uppercase tracking-[0.22em] text-muted">
+            {sizes.join(" / ")}
+          </p>
+        ) : null}
       </div>
     </motion.article>
   );

@@ -7,12 +7,16 @@ const contentSecurityPolicy = [
   `font-src 'self' https://fonts.gstatic.com`,
   `style-src 'self' 'unsafe-inline'`,
   `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "production" ? "" : ` 'unsafe-eval'`}`,
-  `connect-src 'self' https://api.stripe.com https://merchant.onboarding.stripe.com https://*.easypaisa.com.pk https://api.cloudinary.com https://*.supabase.co wss://*.supabase.co`,
+  `connect-src 'self' https://api.stripe.com https://merchant.onboarding.stripe.com https://*.easypaisa.com.pk https://api.cloudinary.com https://*.supabase.co wss://*.supabase.co${
+    process.env.NODE_ENV === "production" ? "" : " http://127.0.0.1:7360 http://localhost:7360"
+  }`,
   `frame-src https://js.stripe.com https://hooks.stripe.com`,
   `upgrade-insecure-requests`,
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  /** Avoid broken relative `vendor-chunks/zustand.js` on server after incremental builds. */
+  serverExternalPackages: ["zustand"],
   images: {
     remotePatterns: [
       {

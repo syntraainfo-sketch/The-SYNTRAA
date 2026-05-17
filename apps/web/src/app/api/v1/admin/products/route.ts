@@ -7,6 +7,7 @@ import { validateBody } from "@/server/utils/validateBody";
 import { Product } from "@/server/models/Product";
 import { Category } from "@/server/models/Category";
 import { productJSON } from "@/server/serialize";
+import { AppError } from "@/server/utils/AppError";
 
 export const runtime = "nodejs";
 
@@ -29,10 +30,25 @@ export async function POST(req: NextRequest) {
     requireAdminRole(user);
     const body = validateBody(productCreateSchema, await req.json());
     const cats = await Category.find({ _id: { $in: body.categories } });
-    const p = await Product.create({
-      ...body,
-      categories: cats.map((c) => c._id),
-    });
-    return NextResponse.json({ data: productJSON(p) }, { status: 201 });
+    try {
+      const p = await Product.create({
+        ...body,
+        categories: cats.map((c) => c._id),
+      });
+      return NextResponse.json({ data: productJSON(p) }, { status: 201 });
+    } catch (e: unknown) {
+      const code =
+        typeof e === "object" && e !== null && "code" in e
+          ? (e as { code?: number }).code
+          : undefined;
+      if (code === 11000) {
+        throw new AppError(
+          409,
+          "Is slug ka product pehle se maujood hai — naya slug use karein.",
+          "DUPLICATE_KEY"
+        );
+      }
+      throw e;
+    }
   });
 }

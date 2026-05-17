@@ -13,6 +13,7 @@ export function Button({
   return (
     <button
       {...props}
+      data-cursor="button"
       className={cn(
         "inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-[0.7rem] uppercase tracking-[0.28em] transition active:scale-[0.99] disabled:opacity-50",
         variant === "primary" &&

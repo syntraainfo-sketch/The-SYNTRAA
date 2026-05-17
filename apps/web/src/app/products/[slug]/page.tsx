@@ -1,20 +1,29 @@
 import type { Metadata } from "next";
-import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { apiGet } from "@/lib/api";
 import type { ApiEnvelope } from "@/lib/types";
-import type { ProductDTO } from "@syntraa/types";
+import type { CategoryDTO, ProductDTO } from "@syntraa/types";
 import { AddToCart } from "@/features/cart/AddToCart";
 import { ProductJsonLd } from "@/components/seo/ProductJsonLd";
 import { BreadcrumbJsonLd } from "@/components/seo/BreadcrumbJsonLd";
 import { SITE_URL } from "@/lib/env";
-import { cld } from "@/lib/cloudinary";
+import { publicCloudinaryCloudName } from "@/lib/cloudinary";
+import { ProductGallery } from "@/components/commerce/ProductGallery";
+import { CatalogProductCard } from "@/components/commerce/CatalogProductCard";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Check } from "lucide-react";
 
 async function fetchProduct(slug: string) {
-  return apiGet<ApiEnvelope<ProductDTO>>(`/products/${slug}`, {
-    next: { revalidate: 60, tags: [`product:${slug}`] },
-  });
+  return apiGet<ApiEnvelope<ProductDTO>>(`/products/${slug}`);
 }
+
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -25,13 +34,13 @@ export async function generateMetadata({
   try {
     const res = await fetchProduct(slug);
     const seo = res.data.seo ?? {};
-    const title =
-      seo.title ?? res.data.title;
+    const title = seo.title ?? res.data.title;
     const description =
       seo.description ?? res.data.descriptionShort ?? "Exclusive edition from THE SYNTRAA.";
+    const cloud = publicCloudinaryCloudName();
     const ogImage =
-      seo.ogImagePublicId && process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
-        ? `https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload/${seo.ogImagePublicId}`
+      seo.ogImagePublicId && cloud
+        ? `https://res.cloudinary.com/${cloud}/image/upload/f_auto,q_auto/${seo.ogImagePublicId}`
         : undefined;
     return {
       title,
@@ -65,15 +74,34 @@ export default async function ProductPage({
     notFound();
   }
 
-  const hero = dto.gallery?.[0];
   const price = dto.variants?.[0]?.priceUSD ?? 0;
   const sku = dto.variants?.[0]?.sku ?? dto.slug;
+
+  let categories: CategoryDTO[] = [];
+  let similar: ProductDTO[] = [];
+  try {
+    const [cRes, pRes] = await Promise.all([
+      apiGet<ApiEnvelope<CategoryDTO[]>>("/categories"),
+      apiGet<ApiEnvelope<ProductDTO[]>>("/products?limit=16"),
+    ]);
+    categories = Array.isArray(cRes.data) ? cRes.data : [];
+    const all = Array.isArray(pRes.data) ? pRes.data : [];
+    similar = all.filter((p) => p.slug !== dto.slug).slice(0, 3);
+  } catch {
+    categories = [];
+    similar = [];
+  }
+
+  const catMap = new Map(categories.map((c) => [c.id ?? c._id ?? "", c.name]));
+  const firstCatId = dto.categories?.[0];
+  const categoryName = firstCatId ? catMap.get(firstCatId) : undefined;
+  const highlights = dto.highlights?.filter(Boolean) ?? [];
 
   return (
     <>
       <BreadcrumbJsonLd
         items={[
-          { name: "Products", path: "/products" },
+          { name: "Shop", path: "/products" },
           { name: dto.title, path: `/products/${dto.slug}` },
         ]}
       />
@@ -84,80 +112,157 @@ export default async function ProductPage({
         sku={sku}
         priceUsd={price}
         imagePublicIds={dto.gallery?.map((g) => g.publicId)}
-        cloudName={process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || undefined}
+        cloudName={publicCloudinaryCloudName() || undefined}
       />
-      <main className="mx-auto grid max-w-7xl gap-16 px-5 pb-24 pt-12 lg:grid-cols-[minmax(0,1.06fr)_minmax(0,0.9fr)] md:gap-24 md:px-10">
-        <div className="space-y-6">
-          <div className="relative aspect-4/5 overflow-hidden rounded-[2.4rem] border border-hairline bg-black/35">
-            {hero?.publicId && (
-              <Image
-                src={cld(hero.publicId, 1600)}
-                alt={hero.alt ?? dto.title}
-                fill
-                className="object-cover"
-                priority
-                sizes="(max-width:1024px) 100vw, 55vw"
-                unoptimized={cld(hero.publicId, 1600).startsWith("http")}
+      <main className="min-h-screen bg-white pb-24 pt-8 md:pt-12">
+        <div className="mx-auto max-w-7xl px-5 md:px-10">
+          <nav className="font-sans text-[0.8rem] text-[#666]">
+            <Link href="/" className="hover:text-black">
+              Home
+            </Link>
+            <span className="mx-2">/</span>
+            <Link href="/products" className="hover:text-black">
+              Shop
+            </Link>
+            <span className="mx-2">/</span>
+            <span className="text-[#111]">{dto.title}</span>
+          </nav>
+
+          <div className="mt-10 grid gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
+            <ProductGallery title={dto.title} gallery={dto.gallery ?? []} />
+
+            <div className="flex flex-col gap-8">
+              {categoryName ? (
+                <p className="font-sans text-sm uppercase tracking-[0.12em] text-[#666]">
+                  {categoryName}
+                </p>
+              ) : null}
+              <h1 className="font-display text-[2.5rem] leading-[1.1] tracking-tight text-[#111] md:text-[2.85rem]">
+                {dto.title}
+              </h1>
+              {dto.reviewsCount != null &&
+              dto.reviewsCount > 0 &&
+              dto.aggregateRating != null &&
+              dto.aggregateRating > 0 ? (
+                <p className="font-sans text-sm text-[#444]">
+                  <span className="text-amber-600">★</span> {dto.aggregateRating.toFixed(1)} (
+                  {dto.reviewsCount} reviews)
+                </p>
+              ) : null}
+              {highlights.length > 0 ? (
+                <ul className="grid gap-3 font-sans text-[0.95rem] text-[#333]">
+                  {highlights.map((line) => (
+                    <li key={line} className="flex gap-3">
+                      <Check className="mt-0.5 h-5 w-5 shrink-0 text-[#2d2d2d]" strokeWidth={2} />
+                      <span>{line}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+
+              <AddToCart
+                title={dto.title}
+                slug={dto.slug}
+                variants={dto.variants ?? []}
+                productMongoId={dto.id ?? dto._id ?? ""}
               />
-            )}
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_-10%,rgba(255,255,255,0.25),transparent_62%)]" />
+
+              <Accordion type="single" collapsible className="w-full border-t border-black/10 pt-2">
+                <AccordionItem value="desc">
+                  <AccordionTrigger>Description</AccordionTrigger>
+                  <AccordionContent>
+                    {dto.richDescription ? (
+                      <div
+                        className="prose prose-sm max-w-none font-sans text-[#444] prose-p:leading-relaxed"
+                        dangerouslySetInnerHTML={{ __html: dto.richDescription }}
+                      />
+                    ) : dto.descriptionShort ? (
+                      <p className="font-sans text-[#444]">{dto.descriptionShort}</p>
+                    ) : (
+                      <p className="font-sans text-muted">No description yet.</p>
+                    )}
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="ingredients">
+                  <AccordionTrigger>Ingredients</AccordionTrigger>
+                  <AccordionContent>
+                    {dto.ingredients ? (
+                      <p className="whitespace-pre-line font-sans text-[#555]">{dto.ingredients}</p>
+                    ) : (
+                      <p className="font-sans text-muted">No ingredients listed yet.</p>
+                    )}
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="how">
+                  <AccordionTrigger>How to Use</AccordionTrigger>
+                  <AccordionContent>
+                    {dto.howToUse ? (
+                      <p className="whitespace-pre-line font-sans text-[#555]">{dto.howToUse}</p>
+                    ) : (
+                      <p className="font-sans text-muted">Usage instructions coming soon.</p>
+                    )}
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="benefits">
+                  <AccordionTrigger>Benefits</AccordionTrigger>
+                  <AccordionContent>
+                    {dto.benefits ? (
+                      <p className="whitespace-pre-line font-sans text-[#555]">{dto.benefits}</p>
+                    ) : highlights.length > 0 ? (
+                      <p className="font-sans text-[#555]">See highlights above for key benefits.</p>
+                    ) : (
+                      <p className="font-sans text-muted">No benefits listed yet.</p>
+                    )}
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="sustainability">
+                  <AccordionTrigger>Sustainability and ethics</AccordionTrigger>
+                  <AccordionContent>
+                    {dto.sustainability ? (
+                      <p className="whitespace-pre-line font-sans text-[#555]">{dto.sustainability}</p>
+                    ) : (
+                      <p className="font-sans text-muted">Sustainability details coming soon.</p>
+                    )}
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </div>
           </div>
-          <div className="grid grid-cols-3 gap-3">
-            {dto.gallery?.slice(1, 5).map((g) => (
-              <div key={g.publicId} className="relative aspect-square overflow-hidden rounded-2xl border border-hairline">
-                <Image
-                  src={cld(g.publicId, 800)}
-                  alt={g.alt ?? dto.title}
-                  fill
-                  className="object-cover"
-                  unoptimized={cld(g.publicId).startsWith("http")}
-                  sizes="(max-width:1024px) 33vw, 18vw"
-                />
+
+          {similar.length > 0 ? (
+            <section className="mt-24 border-t border-black/10 pt-16">
+              <h2 className="font-display text-2xl tracking-tight text-[#111] md:text-3xl">
+                Similar products
+              </h2>
+              <div className="mt-10 grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+                {similar.map((p) => {
+                  const prices = p.variants?.map((v) => v.priceUSD).filter(Boolean) ?? [];
+                  const from = prices.length ? Math.min(...prices) : undefined;
+                  const catId = p.categories?.[0];
+                  const catLabel = catId ? catMap.get(catId) : undefined;
+                  return (
+                    <CatalogProductCard
+                      key={p.slug}
+                      slug={p.slug}
+                      title={p.title}
+                      imagePublicId={p.gallery?.[0]?.publicId}
+                      fromUSD={from}
+                      categoryLabel={catLabel}
+                      variantSizes={p.variants?.map((v) => v.size || v.label || "")}
+                    />
+                  );
+                })}
               </div>
-            ))}
-          </div>
-        </div>
-        <div className="flex flex-col gap-10 pb-24">
-          <header className="space-y-4">
-            <p className="text-[0.62rem] uppercase tracking-[0.35em] text-muted">
-              Edition · {dto.slug}
-            </p>
-            <h1 className="font-display text-4xl leading-tight md:text-[2.8rem]">
-              {dto.title}
-            </h1>
-            {dto.descriptionShort && (
-              <p className="max-w-xl text-muted">{dto.descriptionShort}</p>
-            )}
-          </header>
-          {dto.richDescription && (
-            <article className="prose prose-invert prose-sm max-w-none text-muted">
-              <div dangerouslySetInnerHTML={{ __html: dto.richDescription }} />
-            </article>
-          )}
-          <section className="glass-panel rounded-3xl p-8">
-            <p className="text-[0.68rem] uppercase tracking-[0.32em] text-muted">
-              Configure
-            </p>
-            <AddToCart
-              title={dto.title}
-              slug={dto.slug}
-              variants={dto.variants ?? []}
-              productMongoId={dto.id ?? dto._id ?? ""}
-            />
-          </section>
-          <details className="group rounded-2xl border border-hairline/70 bg-black/35 p-6 text-sm text-muted transition open:bg-surface/40">
-            <summary className="cursor-pointer list-none font-display text-base text-text [&::-webkit-details-marker]:hidden">
-              Care · Authenticity · Provenance →
-            </summary>
-            <p className="mt-6 leading-relaxed">
-              Each SYNTRAA object is stewarded through controlled inventory rails,
-              signature packaging, and encrypted commerce lanes (Stripe &
-              Pakistani wallet rails optional at checkout).
-            </p>
-            <code className="mt-6 block rounded-xl bg-black/60 p-4 text-[0.7rem] text-muted">
-              Canonical URL · {`${SITE_URL}/products/${dto.slug}`}
-            </code>
-          </details>
+              <div className="mt-10 flex justify-center">
+                <Link
+                  href="/products"
+                  className="rounded-full bg-[#2d2d2d] px-8 py-3 font-sans text-[0.72rem] uppercase tracking-[0.18em] text-white transition hover:bg-black"
+                >
+                  Show more →
+                </Link>
+              </div>
+            </section>
+          ) : null}
         </div>
       </main>
     </>

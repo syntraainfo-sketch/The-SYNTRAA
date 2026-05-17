@@ -13,10 +13,11 @@ function mapProduct(p: ProductDTO): UiProductCard {
     excerpt: p.descriptionShort,
     imagePublicId: p.gallery?.[0]?.publicId,
     fromUSD: from,
+    variantSizes: p.variants?.map((v) => v.size || v.label || ""),
   };
 }
 
-export const revalidate = 120;
+export const dynamic = "force-dynamic";
 
 export default async function CategoryDetailPage({
   params,
@@ -28,7 +29,7 @@ export default async function CategoryDetailPage({
   try {
     const res = await apiGet<
       ApiEnvelope<{ category: CategoryDTO; products: ProductDTO[] }>
-    >(`/categories/${slug}`, { next: { revalidate: 120 } });
+    >(`/categories/${slug}`);
     payload = res.data;
   } catch {
     notFound();

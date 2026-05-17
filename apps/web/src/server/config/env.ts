@@ -1,3 +1,5 @@
+import { firstEnv } from "@/lib/envPick";
+
 export function assertProductionEnv(): void {
   const required = [
     "MONGODB_URI",
@@ -13,7 +15,7 @@ export function assertProductionEnv(): void {
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? "development",
   clientOrigin: process.env.CLIENT_ORIGIN ?? "http://localhost:3000",
-  mongodbUri: process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017/syntraa",
+  mongodbUri: process.env.MONGODB_URI ?? "",
   jwtAccessSecret:
     process.env.JWT_ACCESS_SECRET ?? "dev-access-secret-change-me",
   jwtRefreshSecret:
@@ -24,10 +26,16 @@ export const env = {
   stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? "",
   webPublicUrl: process.env.WEB_PUBLIC_URL ?? "http://localhost:3000",
   cloudinary: {
-    cloudName: process.env.CLOUDINARY_CLOUD_NAME ?? "",
+    cloudName: firstEnv(
+      "CLOUDINARY_CLOUD_NAME",
+      "CLOUDINARY_PUBLIC_ID",
+      "cloudinary_cloud_name",
+      "cloudinary_public_id",
+    ),
     apiKey: process.env.CLOUDINARY_API_KEY ?? "",
     apiSecret: process.env.CLOUDINARY_API_SECRET ?? "",
-    folder: process.env.CLOUDINARY_FOLDER ?? "syntraa",
+    folder:
+      firstEnv("CLOUDINARY_FOLDER", "cloudinary_folder") || "syntraa",
   },
   jazzcash: {
     merchantId: process.env.JAZZCASH_MERCHANT_ID ?? "",
