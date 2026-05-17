@@ -14,10 +14,24 @@ const settingsSchema = new Schema(
     },
     secondaryCurrencyCode: String,
     homeSections: { type: [{ type: Schema.Types.Mixed }], default: [] },
+    bankAccount: {
+      bankName: { type: String, default: "Meezan Bank" },
+      accountTitle: { type: String, default: "THE SYNTRAA" },
+      accountNumber: { type: String, default: "" },
+      iban: { type: String, default: "" },
+      branch: { type: String, default: "" },
+      instructions: {
+        type: String,
+        default: "Transfer total amount and add your order number in the reference.",
+      },
+    },
+    easypaisaWallet: { type: String, default: "" },
     paymentFlags: {
-      stripe: { type: Boolean, default: true },
-      jazzcash: { type: Boolean, default: true },
+      stripe: { type: Boolean, default: false },
+      jazzcash: { type: Boolean, default: false },
       easypaisa: { type: Boolean, default: true },
+      bankTransfer: { type: Boolean, default: true },
+      cod: { type: Boolean, default: true },
     },
   },
   { timestamps: true }

@@ -3,7 +3,8 @@ import mongoose from "mongoose";
 import { connectMongo } from "@/server/db/mongoose";
 import { runRoute } from "@/server/http/runRoute";
 import { getOptionalUser } from "@/server/auth/headers";
-import { pkInitSchema } from "@/server/validators/schemas";
+import { manualCheckoutSchema, pkInitSchema } from "@/server/validators/schemas";
+import { getGlobalSettings } from "@/server/services/cartCheckout";
 import { validateBody } from "@/server/utils/validateBody";
 import { hydrateCartLines } from "@/server/services/hydrateCart";
 import { createPendingOrder } from "@/server/services/orderDraft";
@@ -29,20 +30,44 @@ export async function POST(
     if (!["jazzcash", "easypaisa"].includes(provider)) {
       throw new AppError(400, "Unknown provider");
     }
-    const input = validateBody(pkInitSchema, await req.json());
+    const raw = await req.json();
+    const guestToken =
+      typeof raw?.guestToken === "string" ? raw.guestToken : undefined;
 
-    const { lines, subtotalUSD } = await hydrateCartLines(
-      user?.sub,
-      input.guestToken
-    );
+    const settings = await getGlobalSettings();
+    if (provider === "easypaisa" && settings.paymentFlags?.easypaisa === false) {
+      throw new AppError(400, "Easypaisa is not available");
+    }
+
+    const { lines, subtotalUSD } = await hydrateCartLines(user?.sub, guestToken);
+
+    let customerEmail: string | undefined;
+    let shippingAddress: Record<string, string> | undefined;
+
+    if (provider === "easypaisa") {
+      const checkout = validateBody(manualCheckoutSchema, raw);
+      customerEmail = checkout.email?.trim() || undefined;
+      shippingAddress = {
+        name: checkout.customerName.trim(),
+        phone: checkout.phone.trim(),
+        address: checkout.address.trim(),
+      };
+    } else {
+      validateBody(pkInitSchema, raw);
+    }
 
     const order = await createPendingOrder(lines, subtotalUSD, {
       customerId:
         user?.sub && mongoose.isValidObjectId(user.sub)
           ? new mongoose.Types.ObjectId(user.sub)
           : undefined,
-      guestToken: user?.sub ? undefined : input.guestToken,
+      customerEmail,
+      guestToken: user?.sub ? undefined : guestToken,
     });
+
+    if (shippingAddress) {
+      order.shippingAddress = shippingAddress;
+    }
 
     const amountUsd = Math.max(subtotalUSD, 1);
     const amountPkr = Math.round(amountUsd * env.pkrPerUsd);

@@ -68,7 +68,29 @@ export type OrderStatus =
   | "cancelled"
   | "refunded";
 
-export type PaymentProvider = "stripe" | "jazzcash" | "easypaisa";
+export type PaymentProvider =
+  | "stripe"
+  | "jazzcash"
+  | "easypaisa"
+  | "bank_transfer"
+  | "cod";
+
+export interface BankAccountDetails {
+  bankName?: string;
+  accountTitle?: string;
+  accountNumber?: string;
+  iban?: string;
+  branch?: string;
+  instructions?: string;
+}
+
+export interface CheckoutPaymentOptions {
+  bankTransfer: boolean;
+  easypaisa: boolean;
+  cod: boolean;
+  bankAccount?: BankAccountDetails;
+  easypaisaWallet?: string;
+}
 
 export interface OrderLine {
   sku: string;

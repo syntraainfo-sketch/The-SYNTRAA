@@ -14,9 +14,13 @@ const lineSchema = new Schema(
 
 const paymentSchema = new Schema(
   {
-    provider: { type: String, enum: ["stripe", "jazzcash", "easypaisa"] },
+    provider: {
+      type: String,
+      enum: ["stripe", "jazzcash", "easypaisa", "bank_transfer", "cod"],
+    },
     intentId: String,
     txnRef: String,
+    customerNote: String,
     status: String,
     paidAt: Date,
     rawPayload: Schema.Types.Mixed,

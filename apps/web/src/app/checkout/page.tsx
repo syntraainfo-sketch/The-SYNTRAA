@@ -11,8 +11,8 @@ export default function CheckoutPage() {
       </p>
       <h1 className="font-display mt-4 text-4xl">Finalise your composition</h1>
       <p className="mt-6 text-sm text-muted">
-        Choose a payment rail. Stripe handles international cards; JazzCash & Easypaisa
-        honour local liquidity with PKR conversion on the server.
+        Delivery details likhein aur payment method choose karein: bank transfer, Easypaisa,
+        ya cash on delivery (COD).
       </p>
       <div className="mt-12 glass-panel rounded-4xl p-10">
         <CheckoutActions />

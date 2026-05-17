@@ -79,6 +79,15 @@ export const pkInitSchema = z.object({
   guestToken: z.string().optional(),
 });
 
+export const manualCheckoutSchema = z.object({
+  guestToken: z.string().optional(),
+  customerName: z.string().min(1),
+  phone: z.string().min(7),
+  email: z.string().email().optional().or(z.literal("")),
+  address: z.string().min(5),
+  bankReference: z.string().optional(),
+});
+
 export const categoryCreateSchema = z.object({
   name: z.string().min(1),
   slug: z.string().min(1),
