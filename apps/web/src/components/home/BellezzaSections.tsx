@@ -112,8 +112,8 @@ export function HomeBenefits() {
   const items = [
     {
       icon: Truck,
-      title: "Free delivery",
-      text: "Complimentary shipping on qualifying orders so your ritual arrives safely.",
+      title: "Delivery",
+      text: "Reliable shipping on qualifying orders so your ritual arrives safely.",
     },
     {
       icon: Clock,
