@@ -135,9 +135,9 @@ export default function CartPage() {
       {loading && <p className="mt-10 text-sm text-[#666]">Loading…</p>}
       {!loading && items.length === 0 && (
         <p className="mt-10 text-[#666]">
-          Cart khali hai —{" "}
+          Your cart is empty —{" "}
           <Link href="/products" className="text-[#111] underline">
-            shop karein
+            continue shopping
           </Link>
           .
         </p>
