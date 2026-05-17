@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import type { ProductVariant } from "@syntraa/types";
 import { apiFetch } from "@/lib/client-http";
@@ -75,6 +77,7 @@ export function AddToCart({
   variants,
   productMongoId,
 }: AddToCartProps) {
+  const router = useRouter();
   const sortedVariants = useMemo(
     () => normalizeProductVariants(variants),
     [variants]
@@ -82,6 +85,7 @@ export function AddToCart({
 
   const [qty, setQty] = useState(1);
   const [busy, setBusy] = useState(false);
+  const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const guestToken = useGuestStore((s) => s.guestToken);
   const setGuest = useGuestStore((s) => s.setGuestToken);
@@ -100,45 +104,66 @@ export function AddToCart({
   const outOfStock = !selected || (selected.inventory ?? 0) <= 0;
   const canAdd = Boolean(productMongoId) && !outOfStock;
 
-  async function submit() {
+  async function addToCart(): Promise<boolean> {
     if (!productMongoId) {
       setMsg("Product ID missing — page refresh karein.");
-      return;
+      return false;
     }
     if (outOfStock) {
       setMsg("Yeh size abhi stock mein nahi. Admin → Products se Stock update karein.");
-      return;
+      return false;
     }
+    const variant =
+      sortedVariants.find((v) => v.sku === activeSku) ?? sortedVariants[0];
+    if (!variant) {
+      setMsg("Size select karein.");
+      return false;
+    }
+    const res = await apiFetch("/cart/items", {
+      method: "POST",
+      json: {
+        productId: productMongoId,
+        sku: variant.sku,
+        quantity: qty,
+        ...(guestToken ? { guestToken } : {}),
+      },
+    });
+    const body = (await res.json()) as {
+      meta?: { guestToken?: string };
+      error?: { message?: string };
+    };
+    if (!res.ok) {
+      const apiMsg = body.error?.message;
+      throw new Error(apiMsg || "Could not update cart");
+    }
+    if (body.meta?.guestToken) setGuest(body.meta.guestToken);
+    window.dispatchEvent(new Event("syntraa:cart"));
+    return true;
+  }
+
+  async function submit() {
     setBusy(true);
     setMsg(null);
     try {
-      const variant =
-        sortedVariants.find((v) => v.sku === activeSku) ?? sortedVariants[0];
-      if (!variant) throw new Error("No variant");
-      const res = await apiFetch("/cart/items", {
-        method: "POST",
-        json: {
-          productId: productMongoId,
-          sku: variant.sku,
-          quantity: qty,
-          ...(guestToken ? { guestToken } : {}),
-        },
-      });
-      const body = (await res.json()) as {
-        meta?: { guestToken?: string };
-        error?: { message?: string };
-      };
-      if (!res.ok) {
-        const apiMsg = body.error?.message;
-        throw new Error(apiMsg || "Could not update cart");
-      }
-      if (body.meta?.guestToken) setGuest(body.meta.guestToken);
-      setMsg(`Added ${qty} × ${title}`);
-      window.dispatchEvent(new Event("syntraa:cart"));
+      const ok = await addToCart();
+      if (ok) setMsg(`Added ${qty} × ${title}`);
     } catch (e) {
       setMsg((e as Error).message ?? "Unable to cart");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function goToCheckout() {
+    setCheckoutBusy(true);
+    setMsg(null);
+    try {
+      const ok = await addToCart();
+      if (ok) router.push("/checkout");
+    } catch (e) {
+      setMsg((e as Error).message ?? "Checkout nahi ho saka");
+    } finally {
+      setCheckoutBusy(false);
     }
   }
 
@@ -200,14 +225,32 @@ export function AddToCart({
           </p>
         ) : null}
 
-        <button
-          type="button"
-          onClick={submit}
-          disabled={busy || !canAdd}
-          className="w-full rounded-full bg-[#c4a882] py-4 font-sans text-[0.75rem] font-semibold uppercase tracking-[0.2em] text-[#1a1a1a] shadow-sm transition hover:bg-[#b89b72] disabled:opacity-50 md:max-w-md"
-        >
-          {busy ? "Adding…" : outOfStock ? "Out of stock" : "Add to basket"}
-        </button>
+        <div className="flex w-full flex-col gap-3 md:max-w-md">
+          <button
+            type="button"
+            onClick={submit}
+            disabled={busy || checkoutBusy || !canAdd}
+            className="w-full rounded-full bg-[#c4a882] py-4 font-sans text-[0.75rem] font-semibold uppercase tracking-[0.2em] text-[#1a1a1a] shadow-sm transition hover:bg-[#b89b72] disabled:opacity-50"
+          >
+            {busy ? "Adding…" : outOfStock ? "Out of stock" : "Add to basket"}
+          </button>
+
+          <button
+            type="button"
+            onClick={goToCheckout}
+            disabled={busy || checkoutBusy || !canAdd}
+            className="w-full rounded-full border-2 border-[#2d2d2d] bg-white py-4 font-sans text-[0.75rem] font-semibold uppercase tracking-[0.2em] text-[#2d2d2d] transition hover:bg-[#f5f5f5] disabled:opacity-50"
+          >
+            {checkoutBusy ? "Going to checkout…" : "Checkout"}
+          </button>
+
+          <Link
+            href="/cart"
+            className="text-center font-sans text-sm text-[#666] underline-offset-2 hover:text-[#111] hover:underline"
+          >
+            View cart
+          </Link>
+        </div>
 
         {msg ? (
           <p
