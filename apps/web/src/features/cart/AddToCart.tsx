@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { ProductVariant } from "@syntraa/types";
 import { apiFetch } from "@/lib/client-http";
 import {
@@ -79,17 +79,13 @@ export function AddToCart({
 
   const [sku, setSku] = useState(() => sortedVariants[0]?.sku ?? "");
 
-  useEffect(() => {
-    if (!sortedVariants.length) {
-      setSku("");
-      return;
-    }
-    if (!sortedVariants.some((v) => v.sku === sku)) {
-      setSku(sortedVariants[0].sku);
-    }
+  const activeSku = useMemo(() => {
+    if (!sortedVariants.length) return "";
+    return sortedVariants.some((v) => v.sku === sku) ? sku : sortedVariants[0].sku;
   }, [sortedVariants, sku]);
 
-  const selected = sortedVariants.find((v) => v.sku === sku) ?? sortedVariants[0];
+  const selected =
+    sortedVariants.find((v) => v.sku === activeSku) ?? sortedVariants[0];
   const price = selected?.priceUSD ?? 0;
   const compareAt = selected?.compareAtUSD;
 
@@ -97,7 +93,8 @@ export function AddToCart({
     setBusy(true);
     setMsg(null);
     try {
-      const variant = sortedVariants.find((v) => v.sku === sku) ?? sortedVariants[0];
+      const variant =
+        sortedVariants.find((v) => v.sku === activeSku) ?? sortedVariants[0];
       if (!variant) throw new Error("No variant");
       const res = await apiFetch("/cart/items", {
         method: "POST",
@@ -134,7 +131,7 @@ export function AddToCart({
       {sortedVariants.length > 0 ? (
         <ProductSizeButtons
           variants={sortedVariants}
-          selectedSku={sku}
+          selectedSku={activeSku}
           onSelect={setSku}
         />
       ) : (
