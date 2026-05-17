@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import type { JwtPayload } from "../utils/jwt";
 
 export interface CartIdentifiers {
@@ -17,7 +18,9 @@ export function resolveCartIds(
 }
 
 export function cartQueryFilter(ids: CartIdentifiers) {
-  if (ids.userId) return { userId: ids.userId };
+  if (ids.userId && mongoose.isValidObjectId(ids.userId)) {
+    return { userId: new mongoose.Types.ObjectId(ids.userId) };
+  }
   if (ids.guestToken) return { guestToken: ids.guestToken };
   return null;
 }

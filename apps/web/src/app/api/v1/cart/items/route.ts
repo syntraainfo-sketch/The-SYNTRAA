@@ -7,6 +7,7 @@ import { getOptionalUser } from "@/server/auth/headers";
 import { Cart } from "@/server/models/Cart";
 import { Product } from "@/server/models/Product";
 import { cartQueryFilter, resolveCartIds } from "@/server/services/cartContext";
+import { enrichCart } from "@/server/services/cartEnrich";
 import { cartRemoveSchema, cartUpsertSchema } from "@/server/validators/schemas";
 import { validateBody } from "@/server/utils/validateBody";
 import { AppError } from "@/server/utils/AppError";
@@ -82,19 +83,34 @@ export async function DELETE(req: NextRequest) {
     const q = cartQueryFilter(ids);
     if (!q) throw new AppError(400, "Identify cart");
 
-    const cart = await Cart.findOne(q);
+    if (body.clearAll) {
+      const cart = await Cart.findOneAndUpdate(q, { $set: { items: [] } }, { new: true });
+      if (!cart) {
+        return NextResponse.json(
+          { error: { message: "Cart not found" } },
+          { status: 404 }
+        );
+      }
+      return NextResponse.json({ data: await enrichCart(cart) });
+    }
+
+    const productId = body.productId as string;
+    if (!mongoose.isValidObjectId(productId)) {
+      throw new AppError(400, "Invalid product id");
+    }
+
+    const productOid = new mongoose.Types.ObjectId(productId);
+    const cart = await Cart.findOneAndUpdate(
+      q,
+      { $pull: { items: { productId: productOid, sku: body.sku } } },
+      { new: true }
+    );
     if (!cart) {
       return NextResponse.json(
         { error: { message: "Cart not found" } },
         { status: 404 }
       );
     }
-
-    cart.items = cart.items.filter(
-      (i: { productId: mongoose.Types.ObjectId; sku: string }) =>
-        !(String(i.productId) === body.productId && i.sku === body.sku)
-    );
-    await cart.save();
-    return NextResponse.json({ data: cart.toJSON() });
+    return NextResponse.json({ data: await enrichCart(cart) });
   });
 }

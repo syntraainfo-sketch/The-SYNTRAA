@@ -63,11 +63,16 @@ export const cartUpsertSchema = cartItemSchema.extend({
   guestToken: z.string().optional(),
 });
 
-export const cartRemoveSchema = z.object({
-  productId: z.string(),
-  sku: z.string(),
-  guestToken: z.string().optional(),
-});
+export const cartRemoveSchema = z
+  .object({
+    productId: z.string().optional(),
+    sku: z.string().optional(),
+    guestToken: z.string().optional(),
+    clearAll: z.literal(true).optional(),
+  })
+  .refine((data) => data.clearAll === true || (Boolean(data.productId) && Boolean(data.sku)), {
+    message: "productId and sku required unless clearAll is true",
+  });
 
 export const stripeCheckoutSchema = z.object({
   guestToken: z.string().optional(),
