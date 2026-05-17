@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { BankAccountDetails, CheckoutPaymentOptions } from "@syntraa/types";
+import { DEFAULT_CHECKOUT_OPTIONS } from "@/lib/checkout/defaults";
 import { apiFetch } from "@/lib/client-http";
 import { useGuestStore } from "@/stores/guest";
 import { cn } from "@/lib/utils";
@@ -24,32 +25,52 @@ const emptyForm: CustomerForm = {
   bankReference: "",
 };
 
-export function CheckoutActions() {
+type CheckoutActionsProps = {
+  initialOptions?: CheckoutPaymentOptions;
+};
+
+export function CheckoutActions({ initialOptions }: CheckoutActionsProps) {
   const guestToken = useGuestStore((s) => s.guestToken);
-  const [options, setOptions] = useState<CheckoutPaymentOptions | null>(null);
-  const [method, setMethod] = useState<Method>("bank_transfer");
+  const [options, setOptions] = useState<CheckoutPaymentOptions>(
+    initialOptions ?? DEFAULT_CHECKOUT_OPTIONS
+  );
+  const [selectedMethod, setSelectedMethod] = useState<Method | null>(null);
   const [form, setForm] = useState<CustomerForm>(emptyForm);
   const [status, setStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [bankDetails, setBankDetails] = useState<BankAccountDetails | null>(null);
 
   useEffect(() => {
     void (async () => {
       try {
         const res = await apiFetch("/checkout/options");
+        if (!res.ok) return;
         const body = (await res.json()) as { data?: CheckoutPaymentOptions };
-        const data = body.data;
-        if (!data) return;
-        setOptions(data);
-        setBankDetails(data.bankAccount ?? null);
-        if (data.bankTransfer) setMethod("bank_transfer");
-        else if (data.easypaisa) setMethod("easypaisa");
-        else if (data.cod) setMethod("cod");
+        if (!body.data) return;
+        setOptions(body.data);
       } catch {
-        setStatus("Payment options load nahi ho sakay.");
+        /* keep initialOptions / defaults */
       }
     })();
   }, []);
+
+  const bankDetails = options.bankAccount ?? DEFAULT_CHECKOUT_OPTIONS.bankAccount ?? null;
+
+  const methods = useMemo(() => {
+    const list = [
+      { id: "bank_transfer" as const, label: "Bank account", on: options.bankTransfer !== false },
+      { id: "easypaisa" as const, label: "Easypaisa", on: options.easypaisa !== false },
+      { id: "cod" as const, label: "Cash on delivery (COD)", on: options.cod !== false },
+    ];
+    const enabled = list.filter((m) => m.on);
+    return enabled.length > 0 ? enabled : list;
+  }, [options]);
+
+  const method = useMemo(() => {
+    if (selectedMethod && methods.some((m) => m.id === selectedMethod)) {
+      return selectedMethod;
+    }
+    return methods[0]?.id ?? "bank_transfer";
+  }, [methods, selectedMethod]);
 
   function updateForm<K extends keyof CustomerForm>(key: K, value: CustomerForm[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -176,70 +197,22 @@ export function CheckoutActions() {
     return submitCod();
   }
 
-  const methods = (
-    [
-      { id: "bank_transfer" as const, label: "Bank account", enabled: options?.bankTransfer !== false },
-      { id: "easypaisa" as const, label: "Easypaisa", enabled: options?.easypaisa !== false },
-      { id: "cod" as const, label: "Cash on delivery (COD)", enabled: options?.cod !== false },
-    ] as const
-  ).filter((m) => m.enabled);
-
   return (
     <div className="space-y-8">
-      <div className="grid gap-4 md:grid-cols-2">
-        <label className="space-y-2 text-sm text-muted">
-          Full name
-          <input
-            value={form.customerName}
-            onChange={(e) => updateForm("customerName", e.target.value)}
-            className="w-full rounded-2xl border border-hairline bg-white/80 px-4 py-3 text-text"
-            placeholder="Your name"
-          />
-        </label>
-        <label className="space-y-2 text-sm text-muted">
-          Phone
-          <input
-            value={form.phone}
-            onChange={(e) => updateForm("phone", e.target.value)}
-            className="w-full rounded-2xl border border-hairline bg-white/80 px-4 py-3 text-text"
-            placeholder="03xx xxxxxxx"
-          />
-        </label>
-        <label className="space-y-2 text-sm text-muted md:col-span-2">
-          Email (optional)
-          <input
-            type="email"
-            value={form.email}
-            onChange={(e) => updateForm("email", e.target.value)}
-            className="w-full rounded-2xl border border-hairline bg-white/80 px-4 py-3 text-text"
-            placeholder="you@email.com"
-          />
-        </label>
-        <label className="space-y-2 text-sm text-muted md:col-span-2">
-          Delivery address
-          <textarea
-            value={form.address}
-            onChange={(e) => updateForm("address", e.target.value)}
-            rows={3}
-            className="w-full rounded-2xl border border-hairline bg-white/80 px-4 py-3 text-text"
-            placeholder="House, street, city"
-          />
-        </label>
-      </div>
-
-      <div className="space-y-4 border-t border-hairline pt-8">
-        <p className="text-[0.65rem] uppercase tracking-[0.28em] text-muted">Payment method</p>
-        <div className="flex flex-wrap gap-2">
+      {/* Payment methods first — always visible */}
+      <section className="rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-5">
+        <p className="font-sans text-sm font-medium text-[#333]">Payment method</p>
+        <div className="mt-4 flex flex-wrap gap-2.5">
           {methods.map((m) => (
             <button
               key={m.id}
               type="button"
-              onClick={() => setMethod(m.id)}
+              onClick={() => setSelectedMethod(m.id)}
               className={cn(
-                "rounded-lg px-4 py-2.5 font-sans text-sm transition-colors",
+                "rounded-lg px-5 py-2.5 font-sans text-sm font-medium transition-colors",
                 method === m.id
-                  ? "bg-[#2d2d2d] text-white"
-                  : "bg-[#f3f3f3] text-[#666] hover:bg-[#ebebeb]"
+                  ? "bg-[#2d2d2d] text-white shadow-sm"
+                  : "bg-white text-[#555] ring-1 ring-[#e0e0e0] hover:bg-[#f5f5f5]"
               )}
             >
               {m.label}
@@ -247,41 +220,22 @@ export function CheckoutActions() {
           ))}
         </div>
 
-        {method === "bank_transfer" && bankDetails ? (
-          <div className="rounded-2xl border border-hairline bg-white/60 p-5 text-sm text-[#444]">
-            <p className="font-medium text-[#111]">Transfer to our bank account</p>
-            <ul className="mt-3 space-y-1">
-              {bankDetails.bankName ? <li>Bank: {bankDetails.bankName}</li> : null}
-              {bankDetails.accountTitle ? <li>Title: {bankDetails.accountTitle}</li> : null}
-              {bankDetails.accountNumber ? (
-                <li>Account #: {bankDetails.accountNumber}</li>
-              ) : null}
-              {bankDetails.iban ? <li>IBAN: {bankDetails.iban}</li> : null}
-              {bankDetails.branch ? <li>Branch: {bankDetails.branch}</li> : null}
-            </ul>
-            {bankDetails.instructions ? (
-              <p className="mt-3 text-muted">{bankDetails.instructions}</p>
-            ) : null}
-            <label className="mt-4 block space-y-2 text-muted">
-              Transaction reference (optional)
-              <input
-                value={form.bankReference}
-                onChange={(e) => updateForm("bankReference", e.target.value)}
-                className="w-full rounded-xl border border-hairline bg-white px-3 py-2 text-text"
-                placeholder="Receipt / txn ID"
-              />
-            </label>
-          </div>
+        {method === "bank_transfer" ? (
+          <BankDetailsPanel
+            bank={bankDetails}
+            bankReference={form.bankReference}
+            onReferenceChange={(v) => updateForm("bankReference", v)}
+          />
         ) : null}
 
         {method === "easypaisa" ? (
-          <div className="rounded-2xl border border-hairline bg-white/60 p-5 text-sm text-[#444]">
-            <p className="font-medium text-[#111]">Pay with Easypaisa</p>
-            <p className="mt-2 text-muted">
-              Order place hone ke baad aap Easypaisa app / portal par redirect honge.
+          <div className="mt-4 rounded-xl border border-[#e8e8e8] bg-white p-4 text-sm text-[#444]">
+            <p className="font-medium text-[#111]">Easypaisa se pay karein</p>
+            <p className="mt-1 text-[#666]">
+              Order ke baad Easypaisa portal par redirect honge.
             </p>
-            {options?.easypaisaWallet ? (
-              <p className="mt-2">
+            {options.easypaisaWallet ? (
+              <p className="mt-2 text-[#111]">
                 Wallet: <strong>{options.easypaisaWallet}</strong>
               </p>
             ) : null}
@@ -289,21 +243,41 @@ export function CheckoutActions() {
         ) : null}
 
         {method === "cod" ? (
-          <div className="rounded-2xl border border-hairline bg-white/60 p-5 text-sm text-[#444]">
+          <div className="mt-4 rounded-xl border border-[#e8e8e8] bg-white p-4 text-sm text-[#444]">
             <p className="font-medium text-[#111]">Cash on delivery</p>
-            <p className="mt-2 text-muted">
-              Delivery par cash se payment karein. Order confirm hone ke baad team aap se rabta
-              karegi.
-            </p>
+            <p className="mt-1 text-[#666]">Delivery par cash payment karein.</p>
           </div>
         ) : null}
-      </div>
+      </section>
+
+      <section className="space-y-4">
+        <p className="font-sans text-sm font-medium text-[#333]">Delivery details</p>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Field label="Full name" value={form.customerName} onChange={(v) => updateForm("customerName", v)} placeholder="Your name" />
+          <Field label="Phone" value={form.phone} onChange={(v) => updateForm("phone", v)} placeholder="03xx xxxxxxx" />
+          <div className="md:col-span-2">
+            <Field label="Email (optional)" value={form.email} onChange={(v) => updateForm("email", v)} placeholder="you@email.com" type="email" />
+          </div>
+          <div className="md:col-span-2">
+            <label className="block space-y-2 font-sans text-sm text-[#666]">
+              Delivery address
+              <textarea
+                value={form.address}
+                onChange={(e) => updateForm("address", e.target.value)}
+                rows={3}
+                className="w-full rounded-xl border border-[#e0e0e0] bg-white px-4 py-3 text-[#111]"
+                placeholder="House, street, city"
+              />
+            </label>
+          </div>
+        </div>
+      </section>
 
       <button
         type="button"
-        disabled={busy || methods.length === 0}
+        disabled={busy}
         onClick={handleSubmit}
-        className="w-full rounded-full bg-[#c4a882] py-4 font-sans text-[0.75rem] font-semibold uppercase tracking-[0.2em] text-[#1a1a1a] transition hover:bg-[#b89b72] disabled:opacity-50"
+        className="w-full rounded-full bg-[#c4a882] py-4 font-sans text-[0.75rem] font-semibold uppercase tracking-[0.2em] text-[#1a1a1a] shadow-sm transition hover:bg-[#b89b72] disabled:opacity-50"
       >
         {busy
           ? "Processing…"
@@ -315,6 +289,72 @@ export function CheckoutActions() {
       </button>
 
       {status ? <p className="text-sm text-red-600">{status}</p> : null}
+    </div>
+  );
+}
+
+function Field({
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  type?: string;
+}) {
+  return (
+    <label className="block space-y-2 font-sans text-sm text-[#666]">
+      {label}
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-xl border border-[#e0e0e0] bg-white px-4 py-3 text-[#111]"
+        placeholder={placeholder}
+      />
+    </label>
+  );
+}
+
+function BankDetailsPanel({
+  bank,
+  bankReference,
+  onReferenceChange,
+}: {
+  bank: BankAccountDetails | null;
+  bankReference: string;
+  onReferenceChange: (v: string) => void;
+}) {
+  return (
+    <div className="mt-4 rounded-xl border border-[#e8e8e8] bg-white p-4 text-sm text-[#444]">
+      <p className="font-medium text-[#111]">Bank account details</p>
+      {bank?.bankName || bank?.accountNumber ? (
+        <ul className="mt-3 space-y-1 text-[#333]">
+          {bank.bankName ? <li>Bank: {bank.bankName}</li> : null}
+          {bank.accountTitle ? <li>Account title: {bank.accountTitle}</li> : null}
+          {bank.accountNumber ? <li>Account #: {bank.accountNumber}</li> : null}
+          {bank.iban ? <li>IBAN: {bank.iban}</li> : null}
+          {bank.branch ? <li>Branch: {bank.branch}</li> : null}
+        </ul>
+      ) : (
+        <p className="mt-2 text-amber-800">
+          Bank details abhi set nahi — Admin → Payments se account number add karein.
+        </p>
+      )}
+      {bank?.instructions ? <p className="mt-2 text-[#666]">{bank.instructions}</p> : null}
+      <label className="mt-4 block space-y-2 text-[#666]">
+        Transaction reference (optional)
+        <input
+          value={bankReference}
+          onChange={(e) => onReferenceChange(e.target.value)}
+          className="w-full rounded-lg border border-[#e0e0e0] px-3 py-2 text-[#111]"
+          placeholder="Receipt / txn ID"
+        />
+      </label>
     </div>
   );
 }
