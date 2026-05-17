@@ -230,22 +230,12 @@ export function CheckoutActions({ initialOptions }: CheckoutActionsProps) {
 
         {method === "easypaisa" ? (
           <div className="mt-4 rounded-xl border border-[#e8e8e8] bg-white p-4 text-sm text-[#444]">
-            <p className="font-medium text-[#111]">Easypaisa se pay karein</p>
-            <p className="mt-1 text-[#666]">
-              Order ke baad Easypaisa portal par redirect honge.
-            </p>
             {options.easypaisaWallet ? (
-              <p className="mt-2 text-[#111]">
+              <p className="text-[#111]">
                 Wallet: <strong>{options.easypaisaWallet}</strong>
               </p>
             ) : null}
-          </div>
-        ) : null}
-
-        {method === "cod" ? (
-          <div className="mt-4 rounded-xl border border-[#e8e8e8] bg-white p-4 text-sm text-[#444]">
-            <p className="font-medium text-[#111]">Cash on delivery</p>
-            <p className="mt-1 text-[#666]">Delivery par cash payment karein.</p>
+            <PaymentScreenshotNote />
           </div>
         ) : null}
       </section>
@@ -290,6 +280,14 @@ export function CheckoutActions({ initialOptions }: CheckoutActionsProps) {
 
       {status ? <p className="text-sm text-red-600">{status}</p> : null}
     </div>
+  );
+}
+
+function PaymentScreenshotNote() {
+  return (
+    <p className="mt-3 text-sm leading-relaxed text-[#666]">
+      After payment, please share your payment screenshot with our team.
+    </p>
   );
 }
 
@@ -345,14 +343,14 @@ function BankDetailsPanel({
           Bank details abhi set nahi — Admin → Payments se account number add karein.
         </p>
       )}
-      {bank?.instructions ? <p className="mt-2 text-[#666]">{bank.instructions}</p> : null}
+      <PaymentScreenshotNote />
       <label className="mt-4 block space-y-2 text-[#666]">
         Transaction reference (optional)
         <input
           value={bankReference}
           onChange={(e) => onReferenceChange(e.target.value)}
           className="w-full rounded-lg border border-[#e0e0e0] px-3 py-2 text-[#111]"
-          placeholder="Receipt / txn ID"
+          placeholder="Txn ID or note (screenshot shared separately)"
         />
       </label>
     </div>

@@ -20,10 +20,7 @@ const settingsSchema = new Schema(
       accountNumber: { type: String, default: "" },
       iban: { type: String, default: "" },
       branch: { type: String, default: "" },
-      instructions: {
-        type: String,
-        default: "Transfer total amount and add your order number in the reference.",
-      },
+      instructions: { type: String, default: "" },
     },
     easypaisaWallet: { type: String, default: "" },
     paymentFlags: {

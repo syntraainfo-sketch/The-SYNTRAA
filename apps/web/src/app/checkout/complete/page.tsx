@@ -17,10 +17,9 @@ function Body() {
 
   if (method === "bank_transfer") {
     detail =
-      "Bank transfer order placed. Please complete the transfer using the details shown at checkout and include your order reference.";
+      "Order placed. Complete your bank transfer and share your payment screenshot with our team.";
   } else if (method === "cod") {
-    detail =
-      "COD order confirmed. Pay in cash when your parcel arrives.";
+    detail = "Order confirmed. Thank you for shopping with THE SYNTRAA.";
   } else if (sessionId) {
     detail = "Payment received. Thank you for shopping with THE SYNTRAA.";
   }
