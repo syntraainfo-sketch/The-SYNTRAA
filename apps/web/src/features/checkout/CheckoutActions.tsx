@@ -334,9 +334,8 @@ export function CheckoutActions({ initialOptions }: CheckoutActionsProps) {
       {/* Shipping */}
       <section className="space-y-3">
         <h2 className="font-sans text-[17px] font-semibold text-[#111]">Shipping method</h2>
-        <div className="flex items-center justify-between rounded-md border border-[#1773b0] bg-[#f0f5ff] px-4 py-3.5 text-sm">
+        <div className="rounded-md border border-[#1773b0] bg-[#f0f5ff] px-4 py-3.5 text-sm">
           <span className="font-medium text-[#111]">Delivery</span>
-          <span className="font-medium text-[#111]">FREE</span>
         </div>
       </section>
 
