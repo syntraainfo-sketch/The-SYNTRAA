@@ -6,6 +6,7 @@ import { DEFAULT_CHECKOUT_OPTIONS } from "@/lib/checkout/defaults";
 import { apiFetch } from "@/lib/client-http";
 import { useGuestStore } from "@/stores/guest";
 import { cn } from "@/lib/utils";
+import { PaymentScreenshotUpload } from "@/features/checkout/PaymentScreenshotUpload";
 
 type Method = "bank_transfer" | "easypaisa" | "cod";
 
@@ -38,6 +39,9 @@ export function CheckoutActions({ initialOptions }: CheckoutActionsProps) {
   const [form, setForm] = useState<CustomerForm>(emptyForm);
   const [status, setStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [paymentScreenshotPublicId, setPaymentScreenshotPublicId] = useState<string | null>(
+    null
+  );
 
   useEffect(() => {
     void (async () => {
@@ -72,6 +76,11 @@ export function CheckoutActions({ initialOptions }: CheckoutActionsProps) {
     return methods[0]?.id ?? "bank_transfer";
   }, [methods, selectedMethod]);
 
+  function selectMethod(id: Method) {
+    setSelectedMethod(id);
+    setPaymentScreenshotPublicId(null);
+  }
+
   function updateForm<K extends keyof CustomerForm>(key: K, value: CustomerForm[K]) {
     setForm((f) => ({ ...f, [key]: value }));
   }
@@ -91,8 +100,18 @@ export function CheckoutActions({ initialOptions }: CheckoutActionsProps) {
       email: form.email.trim(),
       address: form.address.trim(),
       bankReference: form.bankReference.trim() || undefined,
+      ...(paymentScreenshotPublicId
+        ? { paymentScreenshotPublicId }
+        : {}),
       ...(guestToken ? { guestToken } : {}),
     };
+  }
+
+  function validatePaymentProof(): string | null {
+    if (method === "bank_transfer" && !paymentScreenshotPublicId) {
+      return "Please upload your payment screenshot before placing the order.";
+    }
+    return null;
   }
 
   function postGateway(postUrl: string, fields: Record<string, string>) {
@@ -111,7 +130,7 @@ export function CheckoutActions({ initialOptions }: CheckoutActionsProps) {
   }
 
   async function submitEasypaisa() {
-    const err = validateForm();
+    const err = validateForm() ?? validatePaymentProof();
     if (err) {
       setStatus(err);
       return;
@@ -138,7 +157,7 @@ export function CheckoutActions({ initialOptions }: CheckoutActionsProps) {
   }
 
   async function submitBankTransfer() {
-    const err = validateForm();
+    const err = validateForm() ?? validatePaymentProof();
     if (err) {
       setStatus(err);
       return;
@@ -207,7 +226,7 @@ export function CheckoutActions({ initialOptions }: CheckoutActionsProps) {
             <button
               key={m.id}
               type="button"
-              onClick={() => setSelectedMethod(m.id)}
+              onClick={() => selectMethod(m.id)}
               className={cn(
                 "rounded-lg px-5 py-2.5 font-sans text-sm font-medium transition-colors",
                 method === m.id
@@ -225,6 +244,8 @@ export function CheckoutActions({ initialOptions }: CheckoutActionsProps) {
             bank={bankDetails}
             bankReference={form.bankReference}
             onReferenceChange={(v) => updateForm("bankReference", v)}
+            paymentScreenshotPublicId={paymentScreenshotPublicId}
+            onScreenshotChange={setPaymentScreenshotPublicId}
           />
         ) : null}
 
@@ -235,7 +256,10 @@ export function CheckoutActions({ initialOptions }: CheckoutActionsProps) {
                 Wallet: <strong>{options.easypaisaWallet}</strong>
               </p>
             ) : null}
-            <PaymentScreenshotNote />
+            <PaymentScreenshotUpload
+              publicId={paymentScreenshotPublicId}
+              onPublicIdChange={setPaymentScreenshotPublicId}
+            />
           </div>
         ) : null}
       </section>
@@ -283,14 +307,6 @@ export function CheckoutActions({ initialOptions }: CheckoutActionsProps) {
   );
 }
 
-function PaymentScreenshotNote() {
-  return (
-    <p className="mt-3 text-sm leading-relaxed text-[#666]">
-      After payment, please share your payment screenshot with our team.
-    </p>
-  );
-}
-
 function Field({
   label,
   value,
@@ -322,10 +338,14 @@ function BankDetailsPanel({
   bank,
   bankReference,
   onReferenceChange,
+  paymentScreenshotPublicId,
+  onScreenshotChange,
 }: {
   bank: BankAccountDetails | null;
   bankReference: string;
   onReferenceChange: (v: string) => void;
+  paymentScreenshotPublicId: string | null;
+  onScreenshotChange: (id: string | null) => void;
 }) {
   return (
     <div className="mt-4 rounded-xl border border-[#e8e8e8] bg-white p-4 text-sm text-[#444]">
@@ -343,14 +363,18 @@ function BankDetailsPanel({
           Bank details abhi set nahi — Admin → Payments se account number add karein.
         </p>
       )}
-      <PaymentScreenshotNote />
+      <PaymentScreenshotUpload
+        publicId={paymentScreenshotPublicId}
+        onPublicIdChange={onScreenshotChange}
+        required
+      />
       <label className="mt-4 block space-y-2 text-[#666]">
         Transaction reference (optional)
         <input
           value={bankReference}
           onChange={(e) => onReferenceChange(e.target.value)}
           className="w-full rounded-lg border border-[#e0e0e0] px-3 py-2 text-[#111]"
-          placeholder="Txn ID or note (screenshot shared separately)"
+          placeholder="Txn ID or note"
         />
       </label>
     </div>

@@ -31,3 +31,11 @@ export async function apiFetch(
     body: init.json !== undefined ? JSON.stringify(init.json) : init.body,
   });
 }
+
+/** Multipart upload (do not set Content-Type — browser sets boundary). */
+export async function apiUploadForm(path: string, formData: FormData): Promise<Response> {
+  const token = getStoredAccessToken();
+  const headers = new Headers();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  return fetch(apiUrl(path), { method: "POST", headers, body: formData });
+}

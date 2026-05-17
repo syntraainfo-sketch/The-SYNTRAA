@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/client-http";
+import { cld } from "@/lib/cloudinary";
 
 interface OrderSummary {
   orderNumber?: string;
   status?: string;
+  payment?: { proofPublicId?: string };
 }
 
 export default function AdminOrdersPage() {
@@ -31,6 +33,7 @@ export default function AdminOrdersPage() {
           <tr>
             <th className="pb-4">Reference</th>
             <th className="pb-4">Status</th>
+            <th className="pb-4">Payment proof</th>
           </tr>
         </thead>
         <tbody>
@@ -38,6 +41,20 @@ export default function AdminOrdersPage() {
             <tr key={o.orderNumber} className="border-t border-hairline/70">
               <td className="py-4">{o.orderNumber}</td>
               <td className="py-4 text-muted">{o.status}</td>
+              <td className="py-4">
+                {o.payment?.proofPublicId ? (
+                  <a
+                    href={cld(o.payment.proofPublicId, 1200)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm underline"
+                  >
+                    View screenshot
+                  </a>
+                ) : (
+                  <span className="text-muted">—</span>
+                )}
+              </td>
             </tr>
           ))}
         </tbody>

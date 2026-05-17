@@ -43,6 +43,7 @@ export async function POST(
 
     let customerEmail: string | undefined;
     let shippingAddress: Record<string, string> | undefined;
+    let easypaisaProofId: string | undefined;
 
     if (provider === "easypaisa") {
       const checkout = validateBody(manualCheckoutSchema, raw);
@@ -52,6 +53,7 @@ export async function POST(
         phone: checkout.phone.trim(),
         address: checkout.address.trim(),
       };
+      easypaisaProofId = checkout.paymentScreenshotPublicId?.trim() || undefined;
     } else {
       validateBody(pkInitSchema, raw);
     }
@@ -116,6 +118,7 @@ export async function POST(
     order.payment.provider = "easypaisa";
     order.payment.txnRef = txnId;
     order.payment.status = "pending_redirect";
+    if (easypaisaProofId) order.payment.proofPublicId = easypaisaProofId;
     await order.save();
 
     return NextResponse.json({

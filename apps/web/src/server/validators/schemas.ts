@@ -91,6 +91,7 @@ export const manualCheckoutSchema = z.object({
   email: z.string().email().optional().or(z.literal("")),
   address: z.string().min(5),
   bankReference: z.string().optional(),
+  paymentScreenshotPublicId: z.string().max(300).optional(),
 });
 
 export const categoryCreateSchema = z.object({

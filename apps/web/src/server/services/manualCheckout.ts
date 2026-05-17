@@ -34,11 +34,15 @@ export async function placeManualOrder(
   };
 
   if (provider === "bank_transfer") {
+    if (!input.paymentScreenshotPublicId?.trim()) {
+      throw new AppError(400, "Payment screenshot is required for bank transfer.");
+    }
     order.payment = {
       provider: "bank_transfer",
       status: "awaiting_transfer",
       txnRef: input.bankReference?.trim() || undefined,
       customerNote: input.bankReference?.trim() || undefined,
+      proofPublicId: input.paymentScreenshotPublicId.trim(),
     };
     order.status = "pending_payment";
   } else {

@@ -21,6 +21,7 @@ const paymentSchema = new Schema(
     intentId: String,
     txnRef: String,
     customerNote: String,
+    proofPublicId: String,
     status: String,
     paidAt: Date,
     rawPayload: Schema.Types.Mixed,

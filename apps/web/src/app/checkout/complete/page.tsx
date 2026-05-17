@@ -17,7 +17,7 @@ function Body() {
 
   if (method === "bank_transfer") {
     detail =
-      "Order placed. Complete your bank transfer and share your payment screenshot with our team.";
+      "Order placed. Your payment screenshot has been received with your order.";
   } else if (method === "cod") {
     detail = "Order confirmed. Thank you for shopping with THE SYNTRAA.";
   } else if (sessionId) {

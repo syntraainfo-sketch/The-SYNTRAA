@@ -112,6 +112,7 @@ export interface OrderDTO {
     provider: PaymentProvider;
     intentId?: string;
     txnRef?: string;
+    proofPublicId?: string;
     status: string;
     paidAt?: string;
   };
