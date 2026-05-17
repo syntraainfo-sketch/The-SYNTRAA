@@ -10,6 +10,7 @@ type PaymentScreenshotUploadProps = {
   publicId: string | null;
   onPublicIdChange: (id: string | null) => void;
   required?: boolean;
+  compact?: boolean;
   className?: string;
 };
 
@@ -17,6 +18,7 @@ export function PaymentScreenshotUpload({
   publicId,
   onPublicIdChange,
   required = false,
+  compact = false,
   className,
 }: PaymentScreenshotUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -64,8 +66,8 @@ export function PaymentScreenshotUpload({
   const imageSrc = publicId ? cld(publicId, 400) : previewUrl;
 
   return (
-    <div className={cn("mt-4 space-y-3", className)}>
-      <p className="font-sans text-sm text-[#666]">
+    <div className={cn(compact ? "mt-3 space-y-2" : "mt-4 space-y-3", className)}>
+      <p className={cn("font-sans text-[#666]", compact ? "text-xs" : "text-sm")}>
         {required ? "Payment screenshot (required)" : "Payment screenshot (optional)"}
       </p>
 
@@ -98,7 +100,7 @@ export function PaymentScreenshotUpload({
             type="button"
             disabled={uploading}
             onClick={() => inputRef.current?.click()}
-            className="rounded-lg border border-[#2d2d2d] bg-white px-4 py-2.5 font-sans text-sm font-medium text-[#2d2d2d] transition hover:bg-[#f5f5f5] disabled:opacity-50"
+            className="rounded-md border border-[#d9d9d9] bg-white px-4 py-2.5 font-sans text-sm font-medium text-[#1773b0] transition hover:bg-[#f0f5ff] disabled:opacity-50"
           >
             {uploading
               ? "Uploading…"
