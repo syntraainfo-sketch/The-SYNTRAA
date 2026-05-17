@@ -41,17 +41,26 @@ function ProductSizeButtons({
             <button
               key={v.sku}
               type="button"
-              disabled={outOfStock}
               onClick={() => onSelect(v.sku)}
               className={cn(
-                "inline-flex min-h-10 min-w-[4.5rem] items-center justify-center rounded-lg px-4 py-2 font-sans text-sm transition-colors",
+                "inline-flex min-h-10 min-w-[4.5rem] flex-col items-center justify-center rounded-lg px-4 py-2 font-sans text-sm transition-colors",
                 active
                   ? "bg-[#2d2d2d] text-white"
                   : "bg-[#f3f3f3] text-[#a3a3a3] hover:bg-[#ebebeb] hover:text-[#666]",
-                outOfStock && "cursor-not-allowed opacity-40"
+                outOfStock && !active && "opacity-70"
               )}
             >
-              {variantDisplayLabel(v)}
+              <span>{variantDisplayLabel(v)}</span>
+              {outOfStock ? (
+                <span
+                  className={cn(
+                    "mt-0.5 text-[0.6rem] uppercase tracking-wide",
+                    active ? "text-white/80" : "text-[#b07070]"
+                  )}
+                >
+                  Sold out
+                </span>
+              ) : null}
             </button>
           );
         })}
@@ -88,8 +97,18 @@ export function AddToCart({
     sortedVariants.find((v) => v.sku === activeSku) ?? sortedVariants[0];
   const price = selected?.priceUSD ?? 0;
   const compareAt = selected?.compareAtUSD;
+  const outOfStock = !selected || (selected.inventory ?? 0) <= 0;
+  const canAdd = Boolean(productMongoId) && !outOfStock;
 
   async function submit() {
+    if (!productMongoId) {
+      setMsg("Product ID missing — page refresh karein.");
+      return;
+    }
+    if (outOfStock) {
+      setMsg("Yeh size abhi stock mein nahi. Admin → Products se Stock update karein.");
+      return;
+    }
     setBusy(true);
     setMsg(null);
     try {
@@ -105,8 +124,14 @@ export function AddToCart({
           ...(guestToken ? { guestToken } : {}),
         },
       });
-      const body = (await res.json()) as { meta?: { guestToken?: string } };
-      if (!res.ok) throw new Error("Could not update cart");
+      const body = (await res.json()) as {
+        meta?: { guestToken?: string };
+        error?: { message?: string };
+      };
+      if (!res.ok) {
+        const apiMsg = body.error?.message;
+        throw new Error(apiMsg || "Could not update cart");
+      }
       if (body.meta?.guestToken) setGuest(body.meta.guestToken);
       setMsg(`Added ${qty} × ${title}`);
       window.dispatchEvent(new Event("syntraa:cart"));
@@ -168,16 +193,32 @@ export function AddToCart({
           </div>
         </div>
 
+        {outOfStock ? (
+          <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 font-sans text-sm text-red-800">
+            Is size ka stock 0 hai — khareedari ke liye Admin → Products mein har variant ka{" "}
+            <strong>Stock</strong> 1 ya zyada set karein, phir Save.
+          </p>
+        ) : null}
+
         <button
           type="button"
           onClick={submit}
-          disabled={busy || !selected || (selected.inventory ?? 0) <= 0}
+          disabled={busy || !canAdd}
           className="w-full rounded-full bg-[#c4a882] py-4 font-sans text-[0.75rem] font-semibold uppercase tracking-[0.2em] text-[#1a1a1a] shadow-sm transition hover:bg-[#b89b72] disabled:opacity-50 md:max-w-md"
         >
-          {busy ? "Adding…" : "Add to basket"}
+          {busy ? "Adding…" : outOfStock ? "Out of stock" : "Add to basket"}
         </button>
 
-        {msg ? <p className="font-sans text-sm text-[#555]">{msg}</p> : null}
+        {msg ? (
+          <p
+            className={cn(
+              "font-sans text-sm",
+              msg.startsWith("Added") ? "text-[#555]" : "text-red-700"
+            )}
+          >
+            {msg}
+          </p>
+        ) : null}
         <p className="font-mono text-[0.65rem] text-[#999]">Ref · {slug}</p>
       </div>
     </div>

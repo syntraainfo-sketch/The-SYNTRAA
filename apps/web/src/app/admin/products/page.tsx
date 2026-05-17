@@ -540,6 +540,12 @@ export default function AdminProducts() {
                         setSaveError("Har variant ke liye ML size likhein (jaise 10ml, 50ml, 100ml).");
                         return;
                       }
+                      if (variants.some((v) => (v.inventory ?? 0) <= 0)) {
+                        setSaveError(
+                          "Har variant ka Stock kam az kam 1 hona chahiye — warna Add to basket kaam nahi karega."
+                        );
+                        return;
+                      }
                       const payload = {
                         title: draft.title.trim(),
                         slug: draft.slug.trim(),

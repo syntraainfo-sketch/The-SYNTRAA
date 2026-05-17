@@ -12,7 +12,8 @@
     "seed:admin": "node --import ./scripts/load-env.mjs --import tsx scripts/seedAdmin.ts",
     "seed-admin": "node --import ./scripts/load-env.mjs --import tsx scripts/seedAdmin.ts",
     "mongo:ping": "node --import ./scripts/load-env.mjs --import tsx scripts/mongoPing.ts",
-    "dev:smoke": "node --import ./scripts/load-env.mjs ./scripts/devSmoke.mjs"
+    "dev:smoke": "node --import ./scripts/load-env.mjs ./scripts/devSmoke.mjs",
+    "fix-inventory": "node --import ./scripts/load-env.mjs --import tsx scripts/fixZeroInventory.ts"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.12",
